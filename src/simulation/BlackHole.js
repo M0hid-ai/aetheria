@@ -228,9 +228,23 @@ export class BlackHole {
     this.accretionInner = config.blackHole.accretionInner;
     this.accretionOuter = config.blackHole.accretionOuter;
 
-    // Update geometries and material uniforms
+    // The horizon and photon ring preserve their original proportions, but the
+    // disk's inner/outer radii vary independently between presets. Rebuild its
+    // geometry rather than scaling it, otherwise parts of the shader's radius
+    // range have no geometry to render.
     this.eventHorizon.scale.setScalar(this.horizonRadius / 5.5);
     this.photonRing.scale.setScalar(this.horizonRadius / 5.5);
+
+    if (this.accretionDisk) {
+      const previousGeometry = this.accretionDisk.geometry;
+      this.accretionDisk.geometry = new THREE.RingGeometry(
+        this.accretionInner,
+        this.accretionOuter,
+        128,
+        32
+      );
+      previousGeometry.dispose();
+    }
 
     if (this.diskMaterial) {
       this.diskMaterial.uniforms.uInnerRadius.value = this.accretionInner;
@@ -249,8 +263,13 @@ export class BlackHole {
     // Project 3D vector to Normalized Device Coordinates [-1, 1]
     const screenVec = worldPos.clone().project(camera);
 
-    // Behind camera check
-    const isVisible = screenVec.z < 1.0;
+    // Apply lensing only when the singularity is inside the camera frustum.
+    // Projected positions outside the viewport would otherwise distort an
+    // unrelated edge of the frame.
+    const isVisible =
+      screenVec.x >= -1.0 && screenVec.x <= 1.0 &&
+      screenVec.y >= -1.0 && screenVec.y <= 1.0 &&
+      screenVec.z >= -1.0 && screenVec.z <= 1.0;
 
     // Screen UV [0, 1]
     const screenUV = [

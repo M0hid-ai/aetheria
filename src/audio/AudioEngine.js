@@ -129,6 +129,13 @@ export class AudioEngine {
   setPreset(preset) {
     this.currentPreset = preset;
     if (this.isPlaying) {
+      // A preset change immediately starts a new progression. Cancel the
+      // previous progression's pending timer so changes cannot multiply the
+      // number of chord loops over time.
+      if (this.chordTimer) {
+        clearTimeout(this.chordTimer);
+        this.chordTimer = null;
+      }
       this.chordStep = 0;
       this._playNextChord();
     }

@@ -122,6 +122,23 @@ export class CameraController {
       this.orbitControls.enabled = false;
       this.cinematicTime = 0.0;
     }
+
+    // Avoid carrying movement state into FPV after a mode-switch key was held.
+    this._resetFPVMovement();
+  }
+
+  _resetFPVMovement() {
+    const state = this.fpvState;
+    state.moveForward = false;
+    state.moveBackward = false;
+    state.moveLeft = false;
+    state.moveRight = false;
+    state.moveUp = false;
+    state.moveDown = false;
+    state.rollLeft = false;
+    state.rollRight = false;
+    state.boost = false;
+    state.isMouseLookActive = false;
   }
 
   update(delta, time) {
